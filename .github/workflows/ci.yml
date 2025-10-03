@@ -25,7 +25,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '8.0.x'   # 🔹 Fix for version mismatch
 
       - name: Restore dependencies
         run: dotnet restore
@@ -34,7 +34,8 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Run Tests
-        run: dotnet test --no-build --verbosity normal
+        run: dotnet test PaymentGateway.Tests/PaymentGateway.Tests.csproj --no-build --verbosity normal
+        # 🔹 Fixed: Specific test project instead of solution
 
       - name: Publish
         run: dotnet publish -c Release -o publish
