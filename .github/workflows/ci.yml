@@ -14,7 +14,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ✅ Secrets load step pehle
+      # Load secrets early
       - name: Setup Environment Variables
         run: |
           echo "RAZORPAY_KEY=${{ secrets.RAZORPAY_KEY }}" >> $GITHUB_ENV
@@ -25,17 +25,14 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '8.0.x'   # 🔹 Fix for version mismatch
+          dotnet-version: '8.0.x'   # Fixed to match project target
 
       - name: Restore dependencies
         run: dotnet restore
 
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
-
-      - name: Run Tests
-        run: dotnet test PaymentGateway.Tests/PaymentGateway.Tests.csproj --no-build --verbosity normal
-        # 🔹 Fixed: Specific test project instead of solution
+      - name: Build and Test
+        run: dotnet test PaymentGateway.Tests/PaymentGateway.Tests.csproj --configuration Release --verbosity normal
+        # Combined build + test to avoid "--no-build" argument issue
 
       - name: Publish
         run: dotnet publish -c Release -o publish
