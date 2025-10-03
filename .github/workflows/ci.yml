@@ -17,7 +17,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '8.0.x'   # apne project ka version yaha dalna
+          dotnet-version: '7.0.x'   # apne project ka version dalna
 
       - name: Restore dependencies
         run: dotnet restore
@@ -32,7 +32,7 @@ jobs:
         run: dotnet publish -c Release -o publish
 
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dotnet-build
           path: publish/
