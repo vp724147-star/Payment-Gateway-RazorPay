@@ -14,6 +14,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # ✅ Secrets load step pehle
+      - name: Setup Environment Variables
+        run: |
+          echo "RAZORPAY_KEY=${{ secrets.RAZORPAY_KEY }}" >> $GITHUB_ENV
+          echo "RAZORPAY_SECRET=${{ secrets.RAZORPAY_SECRET }}" >> $GITHUB_ENV
+          echo "RAZORPAY_WEBHOOK_SECRET=${{ secrets.RAZORPAY_WEBHOOK_SECRET }}" >> $GITHUB_ENV
+          echo "DB_CONNECTION_STRING=${{ secrets.DB_CONNECTION_STRING }}" >> $GITHUB_ENV
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
@@ -26,7 +34,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Run Tests
-        run: dotnet test --no-build --verbosity normal || echo "No tests or tests failed"
+        run: dotnet test --no-build --verbosity normal
 
       - name: Publish
         run: dotnet publish -c Release -o publish
@@ -36,11 +44,3 @@ jobs:
         with:
           name: dotnet-build
           path: publish/
-
-      # ✅ Secrets load karne ke liye step
-      - name: Setup Environment Variables
-        run: |
-          echo "RAZORPAY_KEY=${{ secrets.RAZORPAY_KEY }}" >> $GITHUB_ENV
-          echo "RAZORPAY_SECRET=${{ secrets.RAZORPAY_SECRET }}" >> $GITHUB_ENV
-          echo "RAZORPAY_WEBHOOK_SECRET=${{ secrets.RAZORPAY_WEBHOOK_SECRET }}" >> $GITHUB_ENV
-          echo "DB_CONNECTION_STRING=${{ secrets.DB_CONNECTION_STRING }}" >> $GITHUB_ENV
