@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using RazorpayPaymentGateway.Data;
+using RazorpayPaymentGateway.DTOs;
 using RazorpayPaymentGateway.Models;
 using RazorpayPaymentGateway.Services;
 using System.Text;
@@ -11,12 +12,12 @@ namespace RazorpayPaymentGateway.Controllers
     [ApiController]
     public class PaymentController : ControllerBase
     {
-        private readonly RazorpayService _razorpayService;
+        private readonly IRazorpayService _razorpayService;
         private readonly ApplicationDbContext _dbContext;
         private readonly ILogger<PaymentController> _logger;
 
         public PaymentController(
-            RazorpayService razorpayService,
+            IRazorpayService razorpayService,   // 👈 interface inject karo
             ApplicationDbContext dbContext,
             ILogger<PaymentController> logger)
         {
@@ -32,19 +33,25 @@ namespace RazorpayPaymentGateway.Controllers
         [HttpPost("create-order")]
         public IActionResult CreateOrder([FromBody] decimal amount)
         {
-            // ✅ Generate unique receipt (this will be used for mapping later)
+            if (amount <= 0)
+            {
+                return BadRequest("Amount must be greater than zero.");
+            }
+
             var receipt = Guid.NewGuid().ToString();
 
-            // ✅ Create order on Razorpay with receipt
-            var order = _razorpayService.CreateOrder(amount, "INR", receipt);
+            var orderDto = _razorpayService.CreateOrder(amount, "INR", receipt);
+            if (orderDto == null)
+            {
+                return StatusCode(500, "Failed to create order");
+            }
 
-            // ✅ Save order in DB
             var paymentOrder = new PaymentOrder
             {
-                OrderId = receipt,  // internal mapping (our referenceId)
-                RazorpayOrderId = order["id"].ToString(),  // Razorpay ka order id
-                Amount = amount,
-                Currency = "INR",
+                OrderId = orderDto.ReceiptId,           // DTO se hi le lo
+                RazorpayOrderId = orderDto.RazorpayOrderId,
+                Amount = orderDto.Amount,
+                Currency = orderDto.Currency,
                 Status = "created",
                 CreatedAt = DateTime.UtcNow
             };
@@ -52,18 +59,18 @@ namespace RazorpayPaymentGateway.Controllers
             _dbContext.PaymentOrders.Add(paymentOrder);
             _dbContext.SaveChanges();
 
-            // ✅ Return both ids to frontend (for checkout if needed)
-            return Ok(new
+            // Use DTO instead of anonymous object
+            var response = new PaymentOrderResponseDto
             {
-                razorpayOrderId = order["id"].ToString(),
-                receiptId = receipt,
-                amount,
-                currency = "INR",
-                key = _razorpayService.GetKey()
-            });
+                RazorpayOrderId = orderDto.RazorpayOrderId,
+                ReceiptId = orderDto.ReceiptId,
+                Amount = orderDto.Amount,
+                Currency =orderDto.Currency,
+                Key = _razorpayService.GetKey()
+            };
+
+            return Ok(response);
         }
-
-
         /// <summary>
         /// Razorpay Webhook endpoint to handle payment events
         /// </summary>
@@ -81,7 +88,6 @@ namespace RazorpayPaymentGateway.Controllers
                 var signature = Request.Headers["X-Razorpay-Signature"].FirstOrDefault();
                 var eventType = Request.Headers["X-Razorpay-Event"].ToString();
 
-                // Ensure EventType is never null
                 if (string.IsNullOrEmpty(eventType))
                     eventType = "Unknown";
 
@@ -89,14 +95,31 @@ namespace RazorpayPaymentGateway.Controllers
                 _logger.LogInformation("Webhook Signature: {Signature}", signature);
                 _logger.LogInformation("Webhook Event: {EventType}", eventType);
 
-                // Verify signature
+                // ✅ Empty body
+                if (string.IsNullOrWhiteSpace(body))
+                {
+                    return new BadRequestObjectResult("Empty body");
+                }
+
+                // ✅ Invalid signature
                 if (!_razorpayService.VerifyWebhookSignature(body, signature))
                 {
                     _logger.LogWarning("Invalid webhook signature");
-                    return BadRequest("Invalid signature");
+                    return new BadRequestObjectResult("Invalid signature");
                 }
 
-                // Save webhook to DB
+                // ✅ Invalid JSON handling
+                Newtonsoft.Json.Linq.JObject payload;
+                try
+                {
+                    payload = Newtonsoft.Json.Linq.JObject.Parse(body);
+                }
+                catch (Exception)
+                {
+                    _logger.LogWarning("Invalid JSON payload received");
+                    return new BadRequestObjectResult("Invalid JSON payload");
+                }
+
                 var webhook = new PaymentWebhook
                 {
                     EventType = eventType,
@@ -104,9 +127,6 @@ namespace RazorpayPaymentGateway.Controllers
                     ReceivedAt = DateTime.UtcNow
                 };
                 _dbContext.PaymentWebhooks.Add(webhook);
-
-                // Process webhook payload
-                var payload = Newtonsoft.Json.Linq.JObject.Parse(body);
 
                 var receiptId = payload["payload"]?["order"]?["entity"]?["receipt"]?.ToString();
                 var razorpayOrderId = payload["payload"]?["payment"]?["entity"]?["order_id"]?.ToString();
@@ -125,7 +145,7 @@ namespace RazorpayPaymentGateway.Controllers
 
                 if (order != null)
                 {
-                    order.Status = "paid"; // Always mark paid for testing
+                    order.Status = "paid";
                     _dbContext.PaymentOrders.Update(order);
                     _logger.LogInformation("✅ Order {OrderId} marked as paid", order.OrderId);
                 }

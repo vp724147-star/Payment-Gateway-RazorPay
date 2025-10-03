@@ -1,34 +1,47 @@
-﻿using Razorpay.Api;
+﻿using Newtonsoft.Json.Linq;
+using Razorpay.Api;
 using RazorpayPaymentGateway.Controllers;
+using RazorpayPaymentGateway.DTOs;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace RazorpayPaymentGateway.Services
 {
-    public class RazorpayService
+    public class RazorpayService:IRazorpayService
     {
         private readonly IConfiguration _config;
         private readonly ILogger<RazorpayService> _logger;
+        private readonly RazorpayClient _client; // 👈 Razorpay client
+
 
         public RazorpayService(IConfiguration config, ILogger<RazorpayService> logger)
         {
             _config = config;
             _logger = logger;
+            _client = new RazorpayClient(_config["Razorpay:Key"], _config["Razorpay:Secret"]);
         }
         public string GetKey() => _config["Razorpay:Key"];
 
-        public Order CreateOrder(decimal amount, string currency, string receipt)
+        public PaymentOrderResponseDto CreateOrder(decimal amount, string currency, string receipt)
         {
-            var client = new RazorpayClient(_config["Razorpay:Key"], _config["Razorpay:Secret"]);
-            var options = new Dictionary<string, object>
-        {
-            { "amount", (int)(amount * 100) },
-            { "currency", currency },
-            { "receipt", receipt },
-            { "payment_capture", 1 }
-        };
-            return client.Order.Create(options);
+            var order = _client.Order.Create(new Dictionary<string, object>
+            {
+                { "amount", (int)(amount * 100) },// Razorpay expects amount in paise
+                { "currency", currency },
+                { "receipt", receipt },
+                { "payment_capture", 1 }
+            });
+
+            return new PaymentOrderResponseDto
+            {
+                RazorpayOrderId = order["id"].ToString(),
+                ReceiptId = receipt,
+                Amount = amount,
+                Currency = currency,
+                Key = _config["Razorpay:Key"]
+            };
         }
+
 
         public bool VerifyWebhookSignature(string payload, string signature)
         {

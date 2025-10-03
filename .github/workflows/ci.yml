@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 name: CI
 
 on:
@@ -5,12 +6,24 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+=======
+name: .NET Build & Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+>>>>>>> 9ab265b (Initial commit)
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+<<<<<<< HEAD
       - uses: actions/checkout@v3
 
       - name: Setup .NET
@@ -26,3 +39,30 @@ jobs:
 
       - name: Test
         run: dotnet test --no-build --verbosity normal
+=======
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Run Tests
+      run: dotnet test --no-build --verbosity normal
+
+    - name: Publish
+      run: dotnet publish -c Release -o publish
+
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: dotnet-build
+        path: publish/
+>>>>>>> 9ab265b (Initial commit)

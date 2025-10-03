@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36408.4 d17.14
+VisualStudioVersion = 17.14.36408.4
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RazorpayPaymentGateway", "RazorpayPaymentGateway\RazorpayPaymentGateway.csproj", "{683B0C4C-59C6-4AB2-89A3-1F57A7FB8317}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PaymentGateway.Tests", "PaymentGateway.Tests\PaymentGateway.Tests.csproj", "{4C5618A5-F3FF-4BEC-88B8-B7F9D4998DB1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{683B0C4C-59C6-4AB2-89A3-1F57A7FB8317}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{683B0C4C-59C6-4AB2-89A3-1F57A7FB8317}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{683B0C4C-59C6-4AB2-89A3-1F57A7FB8317}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C5618A5-F3FF-4BEC-88B8-B7F9D4998DB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C5618A5-F3FF-4BEC-88B8-B7F9D4998DB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C5618A5-F3FF-4BEC-88B8-B7F9D4998DB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C5618A5-F3FF-4BEC-88B8-B7F9D4998DB1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
