@@ -45,7 +45,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker image
-        run: docker build -t razorpay-api -f RazorpayPaymentGateway/Dockerfile RazorpayPaymentGateway
+        run: docker build -t razorpay-api -f RazorpayPaymentGateway/Dockerfile .
 
       - name: Push to DockerHub
         run: |
